@@ -19,6 +19,12 @@ open class ImageSlideshowItem: UIScrollView, UIScrollViewDelegate {
 
     /// Input Source for the item
     public let image: InputSource
+    
+    /// Fallback Input Source for the item
+    public let fallbackImage: InputSource?
+    
+    /// Scale mode for fallback input source
+    public let fallbackScaleMode: UIViewContentMode?
 
     /// Guesture recognizer to detect double tap to zoom
     open var gestureRecognizer: UITapGestureRecognizer?
@@ -50,11 +56,12 @@ open class ImageSlideshowItem: UIScrollView, UIScrollViewDelegate {
         - parameter image: Input Source to load the image
         - parameter zoomEnabled: holds if it should be possible to zoom-in the image
     */
-    init(image: InputSource, zoomEnabled: Bool, activityIndicator: ActivityIndicatorView? = nil, maximumScale: CGFloat = 2.0) {
+    init(image: InputSource, zoomEnabled: Bool, activityIndicator: ActivityIndicatorView? = nil, maximumScale: CGFloat = 2.0, fallbackImage: InputSource? = nil, fallbackScaleMode: UIViewContentMode? = nil) {
         self.zoomEnabled = zoomEnabled
         self.image = image
         self.activityIndicator = activityIndicator
-        self.maximumScale = maximumScale
+        self.fallbackImage = fallbackImage
+        self.fallbackScaleMode = fallbackScaleMode
 
         super.init(frame: CGRect.null)
 
@@ -135,10 +142,16 @@ open class ImageSlideshowItem: UIScrollView, UIScrollViewDelegate {
                 self?.activityIndicator?.hide()
                 self?.loadFailed = image == nil
                 self?.isLoading = false
+                if self?.loadFailed && self?.fallbackImage != nil {
+                    self?.fallbackImage?.load(to: self?.imageView) { fallbackImage in
+                        self?.imageView.image = self?.imageReleased ? nil : fallbackImage
+                        self?.imageView.contentMode = self?.fallbackScaleMode
+                    }
+                }
             }
         }
     }
-    
+
     func releaseImage() {
         imageReleased = true
         cancelPendingLoad()
